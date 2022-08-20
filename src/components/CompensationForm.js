@@ -6,11 +6,19 @@ import { Select } from "baseui/select";
 import { RadioGroup, Radio, ALIGN } from "baseui/radio";
 import { LabelLarge, LabelMedium } from "baseui/typography";
 
-import { AGE_VS_GROUP, DEPENDENTS_GROUPS, MULTIPLIER_AGE_GROUPS, SALARY_TYPE_VS_AGE_GROUP_PERCENTAGE, RADIO_OVERRIDES } from '../constants';
+import { AGE_VS_GROUP, DEPENDENTS_GROUPS, MULTIPLIER_AGE_GROUPS, SALARY_TYPE_VS_AGE_GROUP_PERCENTAGE } from '../constants';
 
 
 const findAgeMultiplier = age => MULTIPLIER_AGE_GROUPS.find(({ range }) => age >= range[0] && age <= range[1]).multiplier;
 const getPSIncomeFactor = (age, occupation) => SALARY_TYPE_VS_AGE_GROUP_PERCENTAGE[occupation][AGE_VS_GROUP.find(({ range }) => age >= range[0] && age <= range[1]).id]
+
+const RADIO_OVERRIDES = {
+    Root: {
+        style: {
+            flex: 1,
+        }
+    }
+};
 
 const CompensationForm = () => {
     const [salary, setSalary] = useState(0);
@@ -40,7 +48,7 @@ const CompensationForm = () => {
 
 
     return (
-        <Block display="flex" flexDirection="column" marginLeft="30%" marginRight="30%">
+        <Block display="flex" flexDirection="column" marginLeft="30%" marginRight="30%" marginTop="8px">
             <FormControl label="Monthly Salary" htmlFor="salary">
                 <Input id="salary" value={salary} onChange={onSalaryChange} placeholder="Please enter salary here" type="number" min={0} />
             </FormControl>
@@ -49,12 +57,12 @@ const CompensationForm = () => {
             </FormControl>
 
             <FormControl label="Occupation" htmlFor="occupation">
-                <RadioGroup value={occupation} onChange={onOccupationChange} align={ALIGN.horizontal}>
-                    <Radio overrides={RADIO_OVERRIDES} value="self-employeed"><Block marginRight="20px"></Block>Self Employeed</Radio>
-                    <Radio overrides={RADIO_OVERRIDES} value="regular"> Regular </Radio>
+                <RadioGroup value={occupation} onChange={onOccupationChange} align={ALIGN.horizontal} >
+                    <Radio value="self-employeed" overrides={RADIO_OVERRIDES}>Self Employeed</Radio>
+                    <Radio value="regular" overrides={RADIO_OVERRIDES}> Regular </Radio>
                 </RadioGroup>
             </FormControl>
-            <FormControl label="Age" htmlFor="age" caption={`Annual PS Income : ${psIncome}`}>
+            <FormControl label="Age" htmlFor="age">
                 <Input id="age" value={age} onChange={onAgeChange} type="number" min={0} max={100} />
             </FormControl>
             <FormControl label="Number of Dependents" htmlFor="dependents">
@@ -81,7 +89,8 @@ const CompensationForm = () => {
             <LabelLarge marginTop="24px" marginBottom="24px">{`Total Compensation : ${totalCompensation}`}</LabelLarge>
             <LabelMedium >{`Annual PS Income : ${psIncome}`}</LabelMedium>
             <LabelMedium>{`Annual Deductions : ${deductions}`}</LabelMedium>
-            <LabelMedium marginBottom="24px">{`Annual Multipied Income : ${multipliedIncome}`}</LabelMedium>
+            <LabelMedium marginBottom="24px">{`Annual Multiplied Income : ${multipliedIncome}`}</LabelMedium>
+            <LabelMedium marginBottom="24px">Chirag Shah, District Judge</LabelMedium>
         </Block>
     );
 }
