@@ -5,6 +5,7 @@ import { Block } from "baseui/block";
 import { Select } from "baseui/select";
 import { RadioGroup, Radio, ALIGN } from "baseui/radio";
 import { LabelLarge, LabelMedium } from "baseui/typography";
+import moment from 'moment';
 
 import { AGE_VS_GROUP, DEPENDENTS_GROUPS, MULTIPLIER_AGE_GROUPS, SALARY_TYPE_VS_AGE_GROUP_PERCENTAGE } from '../constants';
 
@@ -20,32 +21,36 @@ const RADIO_OVERRIDES = {
     }
 };
 
+const BASE_YEAR = 2018;
+const BASE_CONSORTIUM_AMOUNT = 40000;
+const BASE_FUNERAL_COST = 15000;
+const BASE_LOSS_TO_ESTATE = 15000;
+
 const CompensationForm = () => {
     const [salary, setSalary] = useState(0);
     const [occupation, setOccupation] = useState('self-employeed');
     const [age, setAge] = useState(40);
     const [dependentsGroup, setDependentsGroup] = useState([DEPENDENTS_GROUPS[0]]);
     const [consoritumFactor, setConsoritumFactor] = useState(1);
-    const [consoritumAmount, setConsoritumAmount] = useState(40000);
-    const [funeralCost, setFuneralCost] = useState(15000);
-    const [lossToEstate, setLossToEstate] = useState(15000);
 
     const onSalaryChange = useCallback(e => setSalary(Number(e.target.value)), []);
     const onOccupationChange = useCallback(e => setOccupation(e.currentTarget.value), []);
     const onAgeChange = useCallback(e => setAge(Number(e.target.value)), []);
     const onDependentsGroupChange = useCallback(params => setDependentsGroup(params.value), []);
     const onConsoritumChange = useCallback(e => setConsoritumFactor(Number(e.target.value)), []);
-    const onConsoritumAmountChange = useCallback(e => setConsoritumAmount(Number(e.target.value)), []);
-    const onFuneralCostChange = useCallback(e => setFuneralCost(Number(e.target.value)), []);
-    const onLossToEstateChange = useCallback(e => setLossToEstate(Number(e.target.value)), []);
 
 
     const psIncome = Math.round(salary * 12 * getPSIncomeFactor(age, occupation) / 100);
     const totalIncome = salary * 12 + psIncome;
     const deductions = Math.round(totalIncome * dependentsGroup[0].rate);
     const multipliedIncome = (totalIncome - deductions) * findAgeMultiplier(age);
-    const totalCompensation = multipliedIncome + consoritumAmount * consoritumFactor + funeralCost + lossToEstate;
+    const numOfYearFromBaseYear = (moment().format('YYYY') - BASE_YEAR);
+    const incrementFactor = Math.pow(1.1, Math.floor(numOfYearFromBaseYear / 3));
+    const consoritumAmount = Math.round(BASE_CONSORTIUM_AMOUNT * incrementFactor);
+    const funeralCost = Math.round(BASE_FUNERAL_COST * incrementFactor);
+    const lossToEstate = Math.round(BASE_LOSS_TO_ESTATE * incrementFactor);
 
+    const totalCompensation = multipliedIncome + consoritumAmount * consoritumFactor + funeralCost + lossToEstate;
 
     return (
         <Block display="flex" flexDirection="column" marginLeft="30%" marginRight="30%" marginTop="8px">
@@ -76,15 +81,15 @@ const CompensationForm = () => {
                 </Block>
                 <Block marginRight="0px">
                     <FormControl label="Consortium Amount" htmlFor="consortium amount">
-                        <Input id="consortium amount" value={consoritumAmount} onChange={onConsoritumAmountChange} placeholder="Consortium Amount" type="number" min={0} />
+                        <Input id="consortium amount" value={consoritumAmount} placeholder="Consortium Amount" type="number" min={0} disabled />
                     </FormControl>
                 </Block>
             </Block>
             <FormControl label="Funeral" htmlFor="funeral">
-                <Input id="funeral" value={funeralCost} onChange={onFuneralCostChange} type="number" min={0} />
+                <Input id="funeral" value={funeralCost} type="number" min={0} disabled />
             </FormControl>
             <FormControl label="Loss to Estate" htmlFor="l2e">
-                <Input id="l2e" value={lossToEstate} onChange={onLossToEstateChange} type="number" min={0} />
+                <Input id="l2e" value={lossToEstate} type="number" min={0} disabled />
             </FormControl>
             <LabelLarge marginTop="24px" marginBottom="24px">{`Total Compensation : ${totalCompensation}`}</LabelLarge>
             <LabelMedium >{`Annual PS Income : ${psIncome}`}</LabelMedium>
