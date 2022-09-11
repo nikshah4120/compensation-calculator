@@ -1,11 +1,9 @@
 import { memo, useCallback, useState } from 'react';
-import { FormControl } from "baseui/form-control";
-import { Input } from "baseui/input";
-import { Block } from "baseui/block";
-import { Select } from "baseui/select";
-import { RadioGroup, Radio, ALIGN } from "baseui/radio";
-import { LabelLarge, LabelMedium } from "baseui/typography";
+import { FormControl, FormLabel, Avatar, Box, Select, Accordion, AccordionIcon, AccordionPanel, AccordionItem, AccordionButton, Stack, RadioGroup, Radio, Text } from "@chakra-ui/react";
+import { NumberInput } from './NumberInputField';
+
 import moment from 'moment';
+import numeral from 'numeral';
 
 import { AGE_VS_GROUP, DEPENDENTS_GROUPS, MULTIPLIER_AGE_GROUPS, SALARY_TYPE_VS_AGE_GROUP_PERCENTAGE } from '../constants';
 
@@ -13,13 +11,6 @@ import { AGE_VS_GROUP, DEPENDENTS_GROUPS, MULTIPLIER_AGE_GROUPS, SALARY_TYPE_VS_
 const findAgeMultiplier = age => MULTIPLIER_AGE_GROUPS.find(({ range }) => age >= range[0] && age <= range[1]).multiplier;
 const getPSIncomeFactor = (age, occupation) => SALARY_TYPE_VS_AGE_GROUP_PERCENTAGE[occupation][AGE_VS_GROUP.find(({ range }) => age >= range[0] && age <= range[1]).id]
 
-const RADIO_OVERRIDES = {
-    Root: {
-        style: {
-            flex: 1,
-        }
-    }
-};
 
 const BASE_YEAR = 2018;
 const BASE_CONSORTIUM_AMOUNT = 40000;
@@ -29,20 +20,33 @@ const BASE_LOSS_TO_ESTATE = 15000;
 const CompensationForm = () => {
     const [salary, setSalary] = useState(0);
     const [occupation, setOccupation] = useState('self-employeed');
+    const [maritialStatus, setMaritialStatus] = useState('married');
+
     const [age, setAge] = useState(40);
-    const [dependentsGroup, setDependentsGroup] = useState([DEPENDENTS_GROUPS[0]]);
+    const [dependentsGroupRate, setDependentsGroupRate] = useState(DEPENDENTS_GROUPS[0].rate);
     const [consoritumFactor, setConsoritumFactor] = useState(1);
 
-    const onSalaryChange = useCallback(e => setSalary(Number(e.target.value)), []);
-    const onOccupationChange = useCallback(e => setOccupation(e.currentTarget.value), []);
-    const onAgeChange = useCallback(e => setAge(Number(e.target.value)), []);
-    const onDependentsGroupChange = useCallback(params => setDependentsGroup(params.value), []);
-    const onConsoritumChange = useCallback(e => setConsoritumFactor(Number(e.target.value)), []);
+    const onSalaryChange = useCallback(value => {
+        setSalary(Number(value))
+    }, []);
+    const onOccupationChange = useCallback(value => {
+        setOccupation(value)
+    }, []);
+    const onMaritialStatusChange = useCallback(value => {
+        setMaritialStatus(value);
+
+    }, []);
+
+    const onAgeChange = useCallback(value => setAge(Number(value)), []);
+    const onDependentsGroupChange = useCallback(event => {
+        setDependentsGroupRate(event.target.value)
+    }, []);
+    const onConsoritumChange = useCallback(value => setConsoritumFactor(Number(value)), []);
 
 
     const psIncome = Math.round(salary * 12 * getPSIncomeFactor(age, occupation) / 100);
     const totalIncome = salary * 12 + psIncome;
-    const deductions = Math.round(totalIncome * dependentsGroup[0].rate);
+    const deductions = Math.round(totalIncome * (maritialStatus === 'unmarried' ? 0.5 : dependentsGroupRate));
     const multipliedIncome = (totalIncome - deductions) * findAgeMultiplier(age);
     const numOfYearFromBaseYear = (moment().format('YYYY') - BASE_YEAR);
     const incrementFactor = Math.pow(1.1, Math.floor(numOfYearFromBaseYear / 3));
@@ -53,50 +57,102 @@ const CompensationForm = () => {
     const totalCompensation = multipliedIncome + consoritumAmount * consoritumFactor + funeralCost + lossToEstate;
 
     return (
-        <Block display="flex" flexDirection="column" marginLeft="30%" marginRight="30%" marginTop="8px">
-            <FormControl label="Monthly Salary" htmlFor="salary">
-                <Input id="salary" value={salary} onChange={onSalaryChange} placeholder="Please enter salary here" type="number" min={0} />
-            </FormControl>
-            <FormControl label="Yearly Salary" htmlFor="salary">
-                <Input id="salary" value={salary * 12} placeholder="Please enter salary here" type="number" min={0} disabled />
-            </FormControl>
+        <Box backgroundColor="#F7FAFC" paddingX={[0, 20, '25%', '30%']} paddingTop={[[0, 10, 10, 10]]}>
+            <Stack direction="column" padding={10} spacing={5} backgroundColor="white" borderRadius="8" borderColor="gray.200" borderWidth={1}>
+                <FormControl>
+                    <FormLabel> Monthly Salary </FormLabel>
+                    <NumberInput startEnhancerText="₹"
+                        value={salary} onChange={onSalaryChange} placeholder="Please enter salary here" min={0} />
+                </FormControl>
 
-            <FormControl label="Occupation" htmlFor="occupation">
-                <RadioGroup value={occupation} onChange={onOccupationChange} align={ALIGN.horizontal} >
-                    <Radio value="self-employeed" overrides={RADIO_OVERRIDES}>Self Employeed</Radio>
-                    <Radio value="regular" overrides={RADIO_OVERRIDES}> Regular </Radio>
-                </RadioGroup>
-            </FormControl>
-            <FormControl label="Age" htmlFor="age">
-                <Input id="age" value={age} onChange={onAgeChange} type="number" min={0} max={100} />
-            </FormControl>
-            <FormControl label="Number of Dependents" htmlFor="dependents">
-                <Select options={DEPENDENTS_GROUPS} id="age" value={dependentsGroup} onChange={onDependentsGroupChange} />
-            </FormControl>
-            <Block display="flex" justifyContent="space-between">
-                <Block marginRight="20px">
-                    <FormControl label="Consortium Factor" htmlFor="consortium factor">
-                        <Input id="consortium factor" value={consoritumFactor} onChange={onConsoritumChange} placeholder="Consortium factor" type="number" min={1} />
-                    </FormControl>
-                </Block>
-                <Block marginRight="0px">
-                    <FormControl label="Consortium Amount" htmlFor="consortium amount">
-                        <Input id="consortium amount" value={consoritumAmount} placeholder="Consortium Amount" type="number" min={0} disabled />
-                    </FormControl>
-                </Block>
-            </Block>
-            <FormControl label="Funeral" htmlFor="funeral">
-                <Input id="funeral" value={funeralCost} type="number" min={0} disabled />
-            </FormControl>
-            <FormControl label="Loss to Estate" htmlFor="l2e">
-                <Input id="l2e" value={lossToEstate} type="number" min={0} disabled />
-            </FormControl>
-            <LabelLarge marginTop="24px" marginBottom="24px">{`Total Compensation : ${totalCompensation}`}</LabelLarge>
-            <LabelMedium >{`Annual PS Income : ${psIncome}`}</LabelMedium>
-            <LabelMedium>{`Annual Deductions : ${deductions}`}</LabelMedium>
-            <LabelMedium marginBottom="24px">{`Annual Multiplied Income : ${multipliedIncome}`}</LabelMedium>
-            <LabelMedium marginBottom="24px">Chirag Shah, District Judge</LabelMedium>
-        </Block>
+                <FormControl isDisabled>
+                    <FormLabel>Yearly Salary </FormLabel>
+                    <NumberInput startEnhancerText="₹" value={salary * 12} placeholder="Please enter salary here" min={0} disabled />
+                </FormControl>
+
+                <FormControl>
+                    <FormLabel>Occupation </FormLabel>
+                    <RadioGroup value={occupation} onChange={onOccupationChange} >
+                        <Stack direction="row" spacing={8}>
+
+                            <Radio value="self-employeed" >Self Employeed</Radio>
+                            <Radio value="regular" > Regular </Radio>
+                        </Stack>
+                    </RadioGroup>
+                </FormControl>
+
+                <FormControl>
+                    <FormLabel>Maritial Status </FormLabel>
+                    <RadioGroup value={maritialStatus} onChange={onMaritialStatusChange} >
+                        <Stack direction="row" spacing={12}>
+
+                            <Radio value="unmarried" >Unmarried</Radio>
+                            <Radio value="married" > Married </Radio>
+                        </Stack>
+                    </RadioGroup>
+                </FormControl>
+
+                <FormControl>
+                    <FormLabel>Age </FormLabel>
+                    <NumberInput value={age} onChange={onAgeChange} min={0} max={100} />
+                </FormControl>
+                <FormControl isDisabled={maritialStatus === 'unmarried'}>
+                    <FormLabel>Number of Dependents</FormLabel>
+                    <Select value={dependentsGroupRate} onChange={onDependentsGroupChange}>
+                        {DEPENDENTS_GROUPS.map(({ label, id, rate }) => <option value={rate} key={id}>
+                            {label}
+                        </option>
+                        )}
+                    </Select>
+                </FormControl>
+
+                <Box display="flex" justifyContent="space-between">
+                    <Box marginRight="20px">
+                        <FormControl>
+                            <FormLabel>Consortium Factor</FormLabel>
+                            <NumberInput value={consoritumFactor} onChange={onConsoritumChange} placeholder="Consortium factor" min={1} />
+                        </FormControl>
+                    </Box>
+                    <Box marginRight="0px">
+                        <FormControl>
+                            <FormLabel>Consortium Amount</FormLabel>
+                            <NumberInput startEnhancerText="₹" value={consoritumAmount} placeholder="Consortium Amount" min={0} disabled />
+                        </FormControl>
+                    </Box>
+                </Box>
+
+                <FormControl isDisabled>
+                    <FormLabel>Funeral</FormLabel>
+                    <NumberInput startEnhancerText="₹" value={funeralCost} min={0} disabled />
+                </FormControl>
+
+                <FormControl isDisabled>
+                    <FormLabel>Loss to Estate</FormLabel>
+                    <NumberInput startEnhancerText="₹" value={lossToEstate} min={0} disabled />
+                </FormControl>
+                <Accordion allowToggle>
+                    <AccordionItem>
+                        <h2>
+                            <AccordionButton>
+                                <Box flex='1' textAlign='left'>
+                                    {`Total Compensation : ${numeral(totalCompensation).format('0,0')} ₹`}
+                                </Box>
+                                <AccordionIcon />
+                            </AccordionButton>
+                        </h2>
+                        <AccordionPanel pb={4} textAlign="left">
+                            <Text>{`Annual PS Income : ${numeral(psIncome).format('0,0')} ₹`}</Text>
+                            <Text >{`Annual Deductions : ${numeral(deductions).format('0,0')} ₹`}</Text>
+                            <Text >{`Annual Multiplied Income : ${numeral(multipliedIncome).format('0,0')} ₹`}</Text>
+                        </AccordionPanel>
+                    </AccordionItem>
+                </Accordion>
+
+            </Stack>
+            <Text marginTop={10} paddingBottom={10}> Chirag Shah District Judge</Text>
+
+        </Box >
+
     );
 }
 
